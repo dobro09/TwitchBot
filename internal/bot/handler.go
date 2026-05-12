@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"twbot/irc"
-	"twbot/store"
+	"twbot/internal/irc"
+	"twbot/internal/store"
 )
 
 func Handler(

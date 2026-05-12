@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"twbot/store"
-	api "twbot/twitchapi"
+	"twbot/internal/store"
+	api "twbot/internal/twitchapi"
 )
 
 type Command struct {

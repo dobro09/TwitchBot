@@ -2,7 +2,7 @@ package v1
 
 import (
 	"context"
-	"twbot/store"
+	"twbot/internal/store"
 )
 
 type GRPCServer struct{
