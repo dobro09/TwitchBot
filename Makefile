@@ -2,7 +2,7 @@ include .env
 export
 
 service-run:
-	go run main.go
+	go run ./cmd/twitchbotapp
 
 migrate-up:
 	migrate -path db/migrations -database ${DATABASE_URL} up

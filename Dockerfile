@@ -11,7 +11,7 @@ RUN go mod download
 
 # Копируем исходники и собираем статический бинарник
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/twitchbot main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/twitchbot ./cmd/twitchbotapp
 
 # Финальный образ
 FROM alpine:3.21
