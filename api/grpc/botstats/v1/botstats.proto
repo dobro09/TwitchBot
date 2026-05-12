@@ -1,0 +1,32 @@
+// protoc -I api/grpc/botstats/v1 ` - путь к папке, откуда загружать proto-файлы (там лежит botstats.proto).
+//   --go_out=api/gen/botstats/v1   - сгенерировать Go сообщения в указанную папку.
+//   --go_opt=paths=source_relative `  – выходные файлы сохранятся относительно корня -I,
+// но поскольку мы указали выходную папку явно, это просто поможет избежать вложенных подпапок.
+//   --go-grpc_out=api/gen/botstats/v1 --go-grpc_opt=paths=source_relative ` - аналогично
+//   api/grpc/botstats/v1/botstats.proto
+
+
+syntax = "proto3";
+
+package botstats.v1;
+option go_package = "twbot/api/gen/botstats/v1";
+
+// называть как сервис, а не как метод
+service BotStats {
+    rpc GetTopUsers(GetRequest) returns (GetResponse) {}
+}
+
+message GetRequest {
+  string channel = 1;
+  int32 limit = 2;
+}
+
+message GetResponse {
+  repeated UserStat userstat = 1;
+}
+
+message UserStat {
+  string user_id = 1;
+  string user_name = 2;
+  int32 message_count = 3;
+}
