@@ -31,3 +31,7 @@ onlydb-down:
 updaterunbot:
 	docker compose build --no-cache bot
 	docker compose up -d --force-recreate
+
+inmemory-runbot:
+	go run ./cmd/twitchbotapp
+# 	для инмемори запуска: make inmemory-runbot STORE_TYPE=memory

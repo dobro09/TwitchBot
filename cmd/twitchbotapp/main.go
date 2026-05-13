@@ -53,8 +53,14 @@ func main(){
 	//cmdChan:= make(chan string, 100)
 	connChan:= make(chan string, 100)
 	reconnectCh:= make(chan struct{})
-
-	newstore, err := store.NewPostgresStore(databaseURL)
+	
+	storeType:= os.Getenv("STORE_TYPE")
+	var newstore store.MessageStore
+	if storeType == "memory" {
+		newstore, err = store.NewInMemoryStore()
+	} else {
+		newstore, err = store.NewPostgresStore(databaseURL)
+	}
 	if err !=nil{
 		log.Fatalf("Не удалось подключиться к БД: %v", err)
 	}
