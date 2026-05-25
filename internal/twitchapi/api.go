@@ -8,14 +8,32 @@ import (
 	"net/http"
 	"net/url"
 )
-//много повтора кода
+type TwitchClient struct{
+	clientID string
+	clientSecret string
+	accessToken string
+}
+
+func NewTwitchClient(clientID, clientSecret string) (*TwitchClient, error){
+	
+	accesToken, err := getAppAccessToken(clientID, clientSecret)
+	if err !=nil{
+		return nil, err
+	}
+	tc := &TwitchClient{
+		clientID: clientID,
+		clientSecret: clientSecret,
+		accessToken: accesToken,
+	}
+	return tc, nil
+}
 type TokenResponse struct {
     AccessToken string `json:"access_token"`
     ExpiresIn   int    `json:"expires_in"`
     TokenType   string `json:"token_type"`
 }
 
-func GetAppAccessToken(clientID string, secret string) (string, error) {
+func getAppAccessToken(clientID string, secret string) (string, error) {
 	url := fmt.Sprintf("https://id.twitch.tv/oauth2/token?client_id=%s&client_secret=%s&grant_type=client_credentials", clientID, secret)
 	req, err := http.NewRequest("POST", url, nil)
 	if err !=nil{
@@ -49,15 +67,15 @@ type TwitchUser struct {
     Login string `json:"login"`
 }
 
-func GetBroadcasterID(token string, clientID string, channelName string) (string, error) {
+func(c *TwitchClient) GetBroadcasterID(channelName string) (string, error) {
 	//url:= fmt.Sprintf("https://api.twitch.tv/helix/users?login=%s", channelName)
 	url:= "https://api.twitch.tv/helix/users?login=" + url.QueryEscape(channelName)
 	req, err:= http.NewRequest("GET", url, nil)
 	if err !=nil{
 		return "", fmt.Errorf("ошибка создания гет запроса: %w", err)
 	}
-	req.Header.Add("Client-Id", clientID)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("Client-Id", c.clientID)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
 	resp, err:= http.DefaultClient.Do(req)
 	if err != nil{
 		return "", fmt.Errorf("ошибка отправки запроса %w", err)
@@ -95,14 +113,14 @@ type Clip struct {
     CreatedAt    string `json:"created_at"`
 }
 
-func GetClips(token string, clientID string, broadcasterID string,) ([]string, error) { //без пагинации пока что(?)
+func(c *TwitchClient) GetClips(broadcasterID string,) ([]string, error) { //без пагинации пока что(?)
 	url:= fmt.Sprintf("https://api.twitch.tv/helix/clips?broadcaster_id=%s&first=100", broadcasterID)
 	req, err:= http.NewRequest("GET", url, nil)
 	if err !=nil{
 		return nil, fmt.Errorf("ошибка создания гет запроса: %w", err)
 	}
-	req.Header.Add("Client-Id", clientID)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("Client-Id", c.clientID)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
 	resp, err:= http.DefaultClient.Do(req)
 	if err != nil{
 		return nil, fmt.Errorf("ошибка отправки запроса %w", err)
@@ -129,7 +147,7 @@ func GetClips(token string, clientID string, broadcasterID string,) ([]string, e
 	return clipsID, nil
 }
 
-func RandomClip( urls []string) (string, error) {
+func(c *TwitchClient) RandomClip( urls []string) (string, error) {
 	if len(urls) == 0 {
 		return "", fmt.Errorf("нет клипов")
 	}

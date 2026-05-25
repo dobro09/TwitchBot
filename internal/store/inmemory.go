@@ -3,22 +3,23 @@ package store
 import (
 	"context"
 	"sort"
+	"twbot/internal/model"
 )
 
 type InMemoryStore struct{
-	im []Message
+	im []model.Message
 }
 
 func NewInMemoryStore()(*InMemoryStore, error){
-	return &InMemoryStore{im: []Message{}}, nil
+	return &InMemoryStore{im: []model.Message{}}, nil
 }
 
-func (s *InMemoryStore) InsertMessage(ctx context.Context, msg Message) error{
+func (s *InMemoryStore) InsertMessage(ctx context.Context, msg model.Message) error{
 	s.im = append(s.im, msg)
 	return nil
 }
 
-func (s *InMemoryStore) TopUsers(ctx context.Context, channel string, limit int) ([]UserStat, error){
+func (s *InMemoryStore) TopUsers(ctx context.Context, channel string, limit int) ([]model.UserStat, error){
 	countmap := make(map[string]int)//map[userid]count
 	namemap := make(map[string]string)//map[userid]username
 	for _, val := range s.im{
@@ -27,9 +28,9 @@ func (s *InMemoryStore) TopUsers(ctx context.Context, channel string, limit int)
 			namemap[val.UserID]= val.UserName
 		}
 	}
-	result := make([]UserStat, 0)
+	result := make([]model.UserStat, 0)
 	for k, v := range countmap{
-		var res UserStat
+		var res model.UserStat
 		res.UserID = k
 		res.MessageCount = v
 		res.UserName = namemap[res.UserID]

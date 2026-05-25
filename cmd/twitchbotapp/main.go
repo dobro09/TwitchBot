@@ -2,44 +2,58 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	v1 "twbot/api/gen/botstats/v1"
-	"twbot/internal/bot"
-	"twbot/internal/manager"
+
+	botdelivery "twbot/internal/BotDelivery"
 	"twbot/internal/store"
 	api "twbot/internal/twitchapi"
+	"twbot/internal/usecase"
 
 	"github.com/joho/godotenv"
-	"google.golang.org/grpc"
 )
 
 func main(){
+	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+
 	err:= godotenv.Load()
 	if err != nil {
         log.Println("Файл .env не найден, используются только переменные окружения")
     }
-	token := os.Getenv("TWITCH_TOKEN")
-    botName := os.Getenv("BOT_NAME")
-    channel := os.Getenv("CHANNEL")
-	databaseURL := os.Getenv("DATABASE_URL")
-	twitctClientID := os.Getenv("TWITCH_CLIENT_ID")
+	twitchClientID := os.Getenv("TWITCH_CLIENT_ID")
 	twitchClientSecret := os.Getenv("TWITCH_CLIENT_SECRET")
-	accessToken, err:= api.GetAppAccessToken(twitctClientID,twitchClientSecret)
-	if err !=nil{
-		log.Println("ошибка получения accessTokena, команды randomclip недоступна")
+	twitchClient, err:= api.NewTwitchClient(twitchClientID, twitchClientSecret)
+	if err != nil {
+    	log.Fatalf("Не удалось создать Twitch клиент: %v", err)
 	}
-    if token == "" {
-        log.Fatal("TWITCH_TOKEN не задан")
-    }
 
-	ctx, cancel := context.WithCancel(context.Background())
-	var wg sync.WaitGroup
+	databaseURL := os.Getenv("DATABASE_URL")
+	defaultStore := os.Getenv("STORE_TYPE")
+	if defaultStore == "" {
+    	defaultStore = "postgres"
+	}
+	storeType := flag.String("store", defaultStore, "Тип хранилища: postgres или memory")
+	flag.Parse()
+
+	newstore, err := store.InitStore(*storeType, databaseURL)
+	if err != nil {
+    	log.Fatalf("Не удалось инициализировать хранилище: %v", err)
+	}
+
+	b:= botdelivery.BotDelivery{}
+	cu:= usecase.NewChatUsecase(newstore, twitchClient)
+	b.Init(cu)
+	wg.Add(1)
+	go b.Connect(ctx, &wg)
+	wg.Add(1)
+	go b.Handle(ctx, &wg)
+	
 
 	sigChan:= make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -48,62 +62,5 @@ func main(){
 		fmt.Println("OTMENA")
 		cancel()
 	}()
-	
-	msgChan:= make(chan string, 100)
-	//cmdChan:= make(chan string, 100)
-	connChan:= make(chan string, 100)
-	reconnectCh:= make(chan struct{})
-	
-	storeType:= os.Getenv("STORE_TYPE")
-	var newstore store.MessageStore
-	if storeType == "memory" {
-		newstore, err = store.NewInMemoryStore()
-	} else {
-		newstore, err = store.NewPostgresStore(databaseURL)
-	}
-	if err !=nil{
-		log.Fatalf("Не удалось подключиться к БД: %v", err)
-	}
-
-	grpcServer := v1.NewGRPCServer(newstore)
-	s:= grpc.NewServer()
-	v1.RegisterBotStatsServer(s, grpcServer)
-	lis, err:= net.Listen("tcp", "localhost:50051")
-	if err != nil {
-    	log.Fatalf("не удалось запустить gRPC слушателя: %v", err)
-	}
-	go func ()  {
-		if err:= s.Serve(lis); err !=nil{
-			log.Fatalf("не удалось запустить gRPC слушателя: %v", err)
-		}	
-	}()
-	go func() {
-		<-ctx.Done()
-    	s.GracefulStop()
-	}()
-
-	wg.Add(1)
-	go manager.ConnectionManager(token,botName,channel,msgChan,&wg,ctx,connChan,reconnectCh)
-	
-	// inputStdin:= bufio.NewScanner(os.Stdin)
-	// go func (inputStdin *bufio.Scanner)  {
-	// 	defer close(cmdChan)
-
-	// 	for inputStdin.Scan(){
-	// 		select {
-	// 		case <-ctx.Done():
-	// 			return
-	// 		case cmdChan<- inputStdin.Text():
-	// 		}
-	// 	}
-	// 	if err:= inputStdin.Err(); err != nil {
-	// 		fmt.Println("Ошибка чтения из консоли:", err)
-   	// 		return
-	// 	}
-	// }(inputStdin)
-
-	wg.Add(1)
-	go bot.Handler(connChan, ctx, &wg, msgChan, cancel, newstore, accessToken, twitctClientID,reconnectCh)
 	wg.Wait()
-	fmt.Println("закончилося код")
 }

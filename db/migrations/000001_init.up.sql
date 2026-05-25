@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS messages(
 	id SERIAL PRIMARY KEY,
-	user_id VARCHAR NOT NULL,
-	user_name VARCHAR NOT NULL,
-	channel VARCHAR NOT NULL,
-	text VARCHAR NOT NULL,
-	timestamp TIMESTAMPTZ NOT NULL
+	user_id TEXT NOT NULL,
+	user_name TEXT NOT NULL,
+	channel TEXT NOT NULL,
+	textmsg TEXT NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL
 );

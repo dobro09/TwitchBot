@@ -1,14 +1,15 @@
 package store
 
 import (
-    "context"
-    "database/sql"
-    "fmt"
+	"context"
+	"database/sql"
+	"fmt"
+	"twbot/internal/model"
 
-    "github.com/golang-migrate/migrate/v4"
-    _ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
-    _ "github.com/lib/pq"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 )
 
 type PostgresStore struct {
@@ -37,7 +38,7 @@ func NewPostgresStore(databaseURL string) (*PostgresStore, error) {
     return &PostgresStore{db: db}, nil
 }
 
-func (s *PostgresStore) InsertMessage(ctx context.Context, msg Message) error {
+func (s *PostgresStore) InsertMessage(ctx context.Context, msg model.Message) error {
     // ... SQL INSERT
 	sqlquery:= `
 	INSERT INTO messages (user_id, user_name, channel, text, timestamp)
@@ -47,7 +48,7 @@ func (s *PostgresStore) InsertMessage(ctx context.Context, msg Message) error {
 	return err
 }
 
-func (s *PostgresStore) TopUsers(ctx context.Context, channel string, limit int) ([]UserStat, error) {
+func (s *PostgresStore) TopUsers(ctx context.Context, channel string, limit int) ([]model.UserStat, error) {
     // ... SQL SELECT с GROUP BY
 	sqlquery:= `
 	SELECT user_id, user_name, COUNT(*) AS number_msgs FROM messages
@@ -62,10 +63,10 @@ func (s *PostgresStore) TopUsers(ctx context.Context, channel string, limit int)
 	}
 	defer rows.Close()
 
-	result := make([]UserStat, 0)
+	result := make([]model.UserStat, 0)
 
 	for rows.Next(){
-		var res UserStat
+		var res model.UserStat
 		err:= rows.Scan(
 			&res.UserID,
 			&res.UserName,

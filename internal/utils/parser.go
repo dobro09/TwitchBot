@@ -1,19 +1,22 @@
-package irc
+package utils
 
-import "strings"
+import (
+	"strings"
+	"twbot/internal/model"
+)
 
-type Message struct{
-	Raw string // Полный необработанный текст
-	User string // Юзер который отправил сообщение
-	Command string // Команда, которая пришла
-	Channel string // Канал, на которм пришло сообщение
-	Text string // Обработанный текст,(без тегов), который прислал Юзер
-	Tags string // Теги
-	MessageID string // ID СООБЩЕНИЯ юзера которое было отправлено
-	UserID string // ID ЮЗЕРА который отправил сообщение
-}
+// type Message struct{
+// 	Raw string // Полный необработанный текст
+// 	User string // Юзер который отправил сообщение
+// 	Command string // Команда, которая пришла
+// 	Channel string // Канал, на которм пришло сообщение
+// 	Text string // Обработанный текст,(без тегов), который прислал Юзер
+// 	Tags string // Теги
+// 	MessageID string // ID СООБЩЕНИЯ юзера которое было отправлено
+// 	UserID string // ID ЮЗЕРА который отправил сообщение
+// }
 
-func MsgParser(twmsg string)(msg Message){
+func MsgParser(twmsg string)(msg model.RAWMessage){
 	if twmsg == ""{
 		return
 	}
