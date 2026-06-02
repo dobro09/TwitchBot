@@ -15,11 +15,11 @@
 
 ## Быстрый старт
 
-git clone https://github.com/dobro09/TwitchBot.git && cd TwitchBot
-cp .env.example .env   # заполните токены и настройки
-make compose-up         # запуск в Docker (бот + БД)
-make service-run        # с PostgreSQL
-make inmemory-runbot STORE_TYPE=memory  # с in‑memory хранилищем
+- git clone https://github.com/dobro09/TwitchBot.git && cd TwitchBot
+- cp .env.example .env   # заполните токены и настройки
+- make compose-up         # запуск в Docker (бот + БД)
+- make service-run        # с PostgreSQL
+- make inmemory-runbot STORE_TYPE=memory  # с in‑memory хранилищем
 
 ## Команды бота
 
@@ -47,12 +47,11 @@ make inmemory-runbot STORE_TYPE=memory  # с in‑memory хранилищем
 
 Проект построен по принципам Clean Architecture и разделён на независимые слои:
 
-cmd/twitchbot/          # точка входа (main.go)
-internal/
-  model/                # доменные модели (Message, Command, UserStat, RAWMessage)
-  store/                # интерфейс MessageStore + реализации (PostgresStore, InMemoryStore)
-  usecase/              # бизнес‑логика (ChatUsecase, обработчики команд)
-  delivery/botdelivery/ # IRC‑транспорт (подключение, чтение/запись, пинг‑понг)
-  twitchapi/            # инфраструктура: клиент Twitch API (OAuth, клипы)
-  utils/                # парсер IRC‑сообщений (RawMessage)
-db/migrations/          # SQL‑миграции
+- `cmd/twitchbot/` – точка входа (main.go)
+- `internal/model/` – доменные модели (Message, Command, UserStat, RAWMessage)
+- `internal/store/` – интерфейс MessageStore + реализации (PostgresStore, InMemoryStore)
+- `internal/usecase/` – бизнес-логика (ChatUsecase, обработчики команд)
+- `internal/delivery/botdelivery/` – IRC-транспорт (подключение, чтение/запись, пинг-понг)
+- `internal/twitchapi/` – инфраструктура: клиент Twitch API (OAuth, клипы)
+- `internal/utils/` – парсер IRC-сообщений (RawMessage)
+- `db/migrations/` – SQL-миграции
