@@ -40,39 +40,39 @@ func NewPostgresStore(databaseURL string) (*PostgresStore, error) {
 
 func (s *PostgresStore) InsertMessage(ctx context.Context, msg model.Message) error {
     // ... SQL INSERT
-	sqlquery:= `
+	sqlquery := `
 	INSERT INTO messages (user_id, user_name, channel, text, timestamp)
 	VALUES($1, $2, $3, $4, $5);
 	`
-	_, err :=s.db.ExecContext(ctx, sqlquery, msg.UserID,msg.UserName, msg.Channel, msg.Text,msg.Timestamp)
+	_, err := s.db.ExecContext(ctx, sqlquery, msg.UserID,msg.UserName, msg.Channel, msg.Text,msg.Timestamp)
 	return err
 }
 
 func (s *PostgresStore) TopUsers(ctx context.Context, channel string, limit int) ([]model.UserStat, error) {
     // ... SQL SELECT с GROUP BY
-	sqlquery:= `
+	sqlquery := `
 	SELECT user_id, user_name, COUNT(*) AS number_msgs FROM messages
 	WHERE channel = $1
 	GROUP BY user_id, user_name
 	ORDER BY number_msgs DESC
 	LIMIT $2;
 	`
-	rows, err:= s.db.QueryContext(ctx, sqlquery, channel, limit)
-	if err !=nil{
+	rows, err := s.db.QueryContext(ctx, sqlquery, channel, limit)
+	if err !=nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	result := make([]model.UserStat, 0)
 
-	for rows.Next(){
+	for rows.Next() {
 		var res model.UserStat
 		err:= rows.Scan(
 			&res.UserID,
 			&res.UserName,
 			&res.MessageCount,
 		)
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		result = append(result, res)

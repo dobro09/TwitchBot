@@ -43,10 +43,12 @@ func (b *BotDelivery) Init(cu usecase.ChatUsecase) {
 func (b *BotDelivery) Connect(ctx context.Context, wg *sync.WaitGroup) {					
 	defer wg.Done()
 	defer close(b.msgChan)
+
 	var delay time.Duration = 1 * time.Second
-	for{
-		conn, err:= net.Dial("tcp", "irc.chat.twitch.tv:6667")
-		if err !=nil{
+
+	for {
+		conn, err := net.Dial("tcp", "irc.chat.twitch.tv:6667")
+		if err !=nil {
 			log.Println("не удалось подключиться к Twitch")
 			if waitBackoff(ctx, &delay){return}
 			continue
@@ -55,6 +57,7 @@ func (b *BotDelivery) Connect(ctx context.Context, wg *sync.WaitGroup) {
     		tcpConn.SetKeepAlive(true)
     		tcpConn.SetKeepAlivePeriod(30 * time.Second)
 		}
+
 		delay = 1 * time.Second
 		fmt.Println("подключился к серверу twitch")
 		childctx, childcancel:= context.WithCancel(ctx)
@@ -69,8 +72,8 @@ func (b *BotDelivery) Connect(ctx context.Context, wg *sync.WaitGroup) {
 						return
 					}
 					conn.SetWriteDeadline(time.Now().Add(3*time.Second))
-					_, err:= conn.Write([]byte(msg))
-					if err !=nil{
+					_, err := conn.Write([]byte(msg))
+					if err != nil {
 						log.Println("Ошибка записи в Twitch, инициирую переподключение")
 						childcancel()
 						return
@@ -93,24 +96,24 @@ func (b *BotDelivery) Connect(ctx context.Context, wg *sync.WaitGroup) {
 		go func(input *bufio.Scanner, 
 			conn net.Conn, 
 			msgChan chan string,
-			childCancel context.CancelFunc){
-			for input.Scan(){
-				select{
-				case<-childctx.Done():
+			childCancel context.CancelFunc) {
+			for input.Scan() {
+				select {
+				case <-childctx.Done():
 					fmt.Println("завершено юзером")
 					return
 				case msgChan<- input.Text():
 				}
 			}
-			if err:= input.Err(); err != nil{
+			if err := input.Err(); err != nil {
 				childcancel()
 				fmt.Println("Ошибка чтения из Twitch:", err)
 				return
 			}
 		}(input, conn, b.msgChan, childcancel)
-		go func( ctx context.Context, connChan chan string){
+		go func(ctx context.Context, connChan chan string) {
 			ticker := time.NewTicker(12 * time.Second)
-			for{
+			for {
 				select {
 				case <-childctx.Done():
 					ticker.Stop()
@@ -129,7 +132,7 @@ func (b *BotDelivery) Connect(ctx context.Context, wg *sync.WaitGroup) {
 		case <-ctx.Done():
 			childcancel()
 			return
-		case<-childctx.Done():
+		case <-childctx.Done():
 			childcancel()
 			conn.Close()
 			if waitBackoff(ctx, &delay){return}
@@ -142,14 +145,14 @@ func (b *BotDelivery) Connect(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}
 }
-func waitBackoff(ctx context.Context, delay *time.Duration) bool{
-	if *delay==0 {
+func waitBackoff(ctx context.Context, delay *time.Duration) bool {
+	if *delay == 0 {
 		*delay = 1 * time.Second
 	}
 	if *delay > 30*time.Second { 
 		*delay = 30*time.Second 
 	}
-	select{
+	select {
 	case <-ctx.Done():
 		return true
 	case <-time.After(*delay):
@@ -164,9 +167,9 @@ func (b *BotDelivery) Handle(ctx context.Context, wg *sync.WaitGroup) {
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 	lastActivity := time.Now()
-	lastPONGfromTwitch:= time.Now()
-	for{
-		select{
+	lastPONGfromTwitch := time.Now()
+	for {
+		select {
 		case <-ctx.Done():
 			fmt.Println("завершено юзером")
 			return
@@ -178,7 +181,7 @@ func (b *BotDelivery) Handle(ctx context.Context, wg *sync.WaitGroup) {
     			default:
     			}
 			}
-			if time.Since(lastPONGfromTwitch) > 15*time.Second{
+			if time.Since(lastPONGfromTwitch) > 15*time.Second {
 				select {
     			case b.reconnectCh <- struct{}{}:
 					fmt.Println("нет ответа на мой ПИНГ больше 15 секунд")
@@ -192,8 +195,8 @@ func (b *BotDelivery) Handle(ctx context.Context, wg *sync.WaitGroup) {
     		}
 			lastActivity = time.Now()
 			fmt.Println("RAW:", twmsg)
-			rawmsg:= utils.MsgParser(twmsg)
-			switch rawmsg.Command{
+			rawmsg := utils.MsgParser(twmsg)
+			switch rawmsg.Command {
 			case "PONG":
 				lastPONGfromTwitch = time.Now()
 			case "PING":
@@ -204,19 +207,20 @@ func (b *BotDelivery) Handle(ctx context.Context, wg *sync.WaitGroup) {
 				fmt.Println(rawmsg.User,":", rawmsg.Text)
 				msg := model.Message {
 					UserID: rawmsg.UserID,
-						UserName: rawmsg.User,
-						Channel: rawmsg.Channel,
-						Text: rawmsg.Text,
-						Timestamp: time.Now(),
+					UserName: rawmsg.User,
+					Channel: rawmsg.Channel,
+					Text: rawmsg.Text,
+					MessageID: rawmsg.MessageID,
+					Timestamp: time.Now(),
 				}
-				if err := b.cu.SaveMessage(ctx, msg); err!= nil {
+				if err := b.cu.SaveMessage(ctx, msg); err != nil {
 					fmt.Println("Ошибка сохранения сообщения:", err)
 				}
-				if strings.HasPrefix(msg.Text, "!"){
+				if strings.HasPrefix(msg.Text, "!") {
 					parts := strings.SplitN(msg.Text[1:], " ", 2)
 					command := parts[0]
 					var args string
-					if len(parts) > 1{
+					if len(parts) > 1 {
 						args = parts[1]
 					}
 					cmd := model.Command {
@@ -228,15 +232,15 @@ func (b *BotDelivery) Handle(ctx context.Context, wg *sync.WaitGroup) {
 						Command: command,
 						Args: args,
 					}
-					res, err:= b.cu.CompleteCommand(ctx, cmd)
-					if err !=nil{
+					res, err := b.cu.CompleteCommand(ctx, cmd)
+					if err != nil {
 						fmt.Println("Ошибка выполнения команды:", err)
 					}
-					prefix:= "PRIVMSG " + cmd.Channel + " :"
-					if cmd.ParentMessageID != ""{
-						prefix= "@reply-parent-msg-id=" + cmd.ParentMessageID + " " + prefix
+					prefix := "PRIVMSG " + cmd.Channel + " :"
+					if cmd.ParentMessageID != "" {
+						prefix = "@reply-parent-msg-id=" + cmd.ParentMessageID + " " + prefix
 					}
-					b.connChan<- prefix + res + "\r\n"
+					b.connChan <- prefix + res + "\r\n"
 				}
 			}
 		}

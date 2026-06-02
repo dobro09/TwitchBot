@@ -20,15 +20,17 @@ import (
 
 func main(){
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var wg sync.WaitGroup
 
-	err:= godotenv.Load()
+	err := godotenv.Load()
 	if err != nil {
         log.Println("Файл .env не найден, используются только переменные окружения")
     }
 	twitchClientID := os.Getenv("TWITCH_CLIENT_ID")
 	twitchClientSecret := os.Getenv("TWITCH_CLIENT_SECRET")
-	twitchClient, err:= api.NewTwitchClient(twitchClientID, twitchClientSecret)
+	twitchClient, err := api.NewTwitchClient(twitchClientID, twitchClientSecret)
 	if err != nil {
     	log.Fatalf("Не удалось создать Twitch клиент: %v", err)
 	}
@@ -55,9 +57,9 @@ func main(){
 	go b.Handle(ctx, &wg)
 	
 
-	sigChan:= make(chan os.Signal, 1)
+	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func(){
+	go func() {
 		<-sigChan
 		fmt.Println("OTMENA")
 		cancel()

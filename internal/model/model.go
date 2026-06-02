@@ -27,7 +27,7 @@ type UserStat struct {
 	MessageCount int
 }
 
-type RAWMessage struct{
+type RAWMessage struct {
 	Raw string // Полный необработанный текст
 	User string // Юзер который отправил сообщение
 	Command string // Команда, которая пришла

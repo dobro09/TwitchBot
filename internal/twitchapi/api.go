@@ -8,19 +8,18 @@ import (
 	"net/http"
 	"net/url"
 )
-type TwitchClient struct{
+type TwitchClient struct {
 	clientID string
 	clientSecret string
 	accessToken string
 }
 
-func NewTwitchClient(clientID, clientSecret string) (*TwitchClient, error){
-	
+func NewTwitchClient(clientID, clientSecret string) (*TwitchClient, error) {
 	accesToken, err := getAppAccessToken(clientID, clientSecret)
-	if err !=nil{
+	if err !=nil {
 		return nil, err
 	}
-	tc := &TwitchClient{
+	tc := &TwitchClient {
 		clientID: clientID,
 		clientSecret: clientSecret,
 		accessToken: accesToken,
@@ -36,23 +35,23 @@ type TokenResponse struct {
 func getAppAccessToken(clientID string, secret string) (string, error) {
 	url := fmt.Sprintf("https://id.twitch.tv/oauth2/token?client_id=%s&client_secret=%s&grant_type=client_credentials", clientID, secret)
 	req, err := http.NewRequest("POST", url, nil)
-	if err !=nil{
+	if err != nil {
 		return "", fmt.Errorf("ошибка создания запроса: %w", err)
 	}
-	resp, err:=http.DefaultClient.Do(req)
-	if err !=nil{
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
 		return "", fmt.Errorf("ошибка отправки запроса: %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	if err !=nil{
+	if err != nil {
 		return "", fmt.Errorf("ошибка чтения тела ответа: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
     	return "", fmt.Errorf("Twitch API вернул статус %d: %s", resp.StatusCode, string(body))
 	}
 	var token TokenResponse
-	if err:= json.Unmarshal(body, &token); err != nil{
+	if err := json.Unmarshal(body, &token); err != nil {
 		return "", fmt.Errorf("ошибка парсинга jsona: %w", err)
 	}
 	return token.AccessToken, nil
@@ -69,30 +68,30 @@ type TwitchUser struct {
 
 func(c *TwitchClient) GetBroadcasterID(channelName string) (string, error) {
 	//url:= fmt.Sprintf("https://api.twitch.tv/helix/users?login=%s", channelName)
-	url:= "https://api.twitch.tv/helix/users?login=" + url.QueryEscape(channelName)
-	req, err:= http.NewRequest("GET", url, nil)
-	if err !=nil{
+	url := "https://api.twitch.tv/helix/users?login=" + url.QueryEscape(channelName)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
 		return "", fmt.Errorf("ошибка создания гет запроса: %w", err)
 	}
 	req.Header.Add("Client-Id", c.clientID)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
-	resp, err:= http.DefaultClient.Do(req)
-	if err != nil{
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
 		return "", fmt.Errorf("ошибка отправки запроса %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	if err !=nil{
+	if err !=nil {
 		return "", fmt.Errorf("ошибка чтения тела ответа: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
     	return "", fmt.Errorf("Twitch API вернул статус %d: %s", resp.StatusCode, string(body))
 	}
 	var twitch TwitchUserResponse
-	if err := json.Unmarshal(body, &twitch); err != nil{
+	if err := json.Unmarshal(body, &twitch); err != nil {
 		return "", fmt.Errorf("ошибка парсинга jsona: %w", err)
 	}
-	if len(twitch.Data) == 0{
+	if len(twitch.Data) == 0 {
 		return "", fmt.Errorf("канал %s не найден", channelName)
 	}
 	return twitch.Data[0].ID, nil
@@ -113,35 +112,35 @@ type Clip struct {
     CreatedAt    string `json:"created_at"`
 }
 
-func(c *TwitchClient) GetClips(broadcasterID string,) ([]string, error) { //без пагинации пока что(?)
-	url:= fmt.Sprintf("https://api.twitch.tv/helix/clips?broadcaster_id=%s&first=100", broadcasterID)
-	req, err:= http.NewRequest("GET", url, nil)
-	if err !=nil{
+func(c *TwitchClient) GetClips(broadcasterID string,) ([]string, error) {
+	url := fmt.Sprintf("https://api.twitch.tv/helix/clips?broadcaster_id=%s&first=100", broadcasterID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err !=nil {
 		return nil, fmt.Errorf("ошибка создания гет запроса: %w", err)
 	}
 	req.Header.Add("Client-Id", c.clientID)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
-	resp, err:= http.DefaultClient.Do(req)
-	if err != nil{
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
 		return nil, fmt.Errorf("ошибка отправки запроса %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	if err !=nil{
+	if err != nil {
 		return nil, fmt.Errorf("ошибка чтения тела ответа: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
     	return nil, fmt.Errorf("Twitch API вернул статус %d: %s", resp.StatusCode, string(body))
 	}
 	var clips ClipsResponse
-	if err := json.Unmarshal(body, &clips); err != nil{
+	if err := json.Unmarshal(body, &clips); err != nil {
 		return nil, fmt.Errorf("ошибка парсинга jsona: %w", err)
 	}
-	if len(clips.Data) == 0{
+	if len(clips.Data) == 0 {
 		return nil, fmt.Errorf("клипов на канале не найдено")
 	}
 	var clipsID []string
-	for _,val := range clips.Data{
+	for _,val := range clips.Data {
 		clipsID = append(clipsID, val.URL)
 	}
 	return clipsID, nil
